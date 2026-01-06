@@ -2,15 +2,17 @@ import random
 import pathlib
 import textwrap
 import sys
+from fpdf import FPDF
 
 class BingoCard:
     def __init__(self):
         self.bingo_items = self.load_bingo_items()
         self.card = self.generate_card()
         self.print_display()
+        self.pdf_display()
 
     def load_bingo_items(self):
-        file_path = pathlib.Path(__file__).parent / 'bingolist.txt'
+        file_path = pathlib.Path(__file__).parent / 'monthlist.txt'
         if not file_path.exists():
             print("Bingo items file not found.", file=sys.stderr)
             return []
@@ -28,7 +30,7 @@ class BingoCard:
         random.shuffle(self.bingo_items)
         return self.bingo_items[:25]
 
-    def generate_card(self):
+    def generate_card(self) -> list:
         items = self.shuffle_bingo_items()
         card = []
         columns = {
@@ -44,7 +46,7 @@ class BingoCard:
             for col in ['B', 'I', 'N', 'G', 'O']:
                 row.append(columns[col][i])
             card.append(row)
-        
+
         return card
 
     def print_display(self, col_width=18, cell_height=4):
@@ -74,6 +76,24 @@ class BingoCard:
                 row_line = '| ' + ' | '.join(wrapped[r][c][line_idx] for c in range(len(cols))) + ' |'
                 print(row_line)
             print(sep)
+
+    def pdf_display(self):
+        pdf = FPDF(orientation='L', unit='mm', format='A4')
+        pdf.add_page()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.set_font("Helvetica", size=16)
+
+        with pdf.table() as table:
+            header = table.row()
+            for letter in ['B', 'I', 'N', 'G', 'O']:
+                header.cell(letter, align='C')
+            for data_row in self.card:
+                row = table.row()
+                for datum in data_row:
+                    row.cell(datum, align='C')
+
+
+        pdf.output("bingo_card.pdf")
 
 if __name__ == "__main__":
     BingoCard()
